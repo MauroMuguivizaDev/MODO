@@ -91,14 +91,19 @@ updateGreeting();
    TAREFAS
 ========================= */
 
-const taskList = document.getElementById("taskList");
+const taskPreview = document.getElementById("taskPreview");
+const taskListFull = document.getElementById("taskListFull");
 const taskCountEl = document.getElementById("taskCount");
-const addTaskBtn = document.getElementById("addTaskBtn");
+const addTaskBtnFull = document.getElementById("addTaskBtnFull");
+const filterButtons = document.querySelectorAll(".filter-btn");
 
 const taskModal = document.getElementById("taskModal");
 const taskInput = document.getElementById("taskInput");
 const cancelTaskBtn = document.getElementById("cancelTask");
 const confirmTaskBtn = document.getElementById("confirmTask");
+
+const MAX_PREVIEW = 4;
+let taskFilter = "all";
 
 function escapeHtml(text) {
     const div = document.createElement("div");
@@ -106,36 +111,92 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function renderTasks() {
-    taskList.innerHTML = "";
+function emptyStateHtml(message, submessage) {
+    return `
+        <div class="empty-state">
+            <div class="empty-icon">${ICONS.checkSquare}</div>
+            <p>${message}</p>
+            <span>${submessage}</span>
+        </div>
+    `;
+}
+
+/* --- Preview (Início, somente leitura) --- */
+
+function renderPreview() {
+    if (!taskPreview) return;
 
     if (tasks.length === 0) {
-        taskList.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">${ICONS.checkSquare}</div>
-                <p>Nenhuma tarefa ainda.</p>
-                <span>Adicione algo que precisa fazer hoje.</span>
-            </div>
-        `;
-    } else {
-        tasks.forEach((task, index) => {
-            const item = document.createElement("div");
-            item.className = "task-item" + (task.done ? " done" : "");
-
-            item.innerHTML = `
-                <label class="task-checkbox">
-                    <input type="checkbox" data-index="${index}" ${task.done ? "checked" : ""}>
-                    <span class="checkbox-visual"></span>
-                </label>
-                <span class="task-text">${escapeHtml(task.text)}</span>
-                <button class="task-delete" data-index="${index}" aria-label="Remover tarefa">
-                    ${ICONS.trash}
-                </button>
-            `;
-
-            taskList.appendChild(item);
-        });
+        taskPreview.innerHTML = emptyStateHtml("Nenhuma tarefa ainda.", "Adicione algo que precisa fazer hoje.");
+        return;
     }
+
+    // Pendentes primeiro, concluídas depois
+    const sorted = [...tasks].sort((a, b) => Number(a.done) - Number(b.done));
+    const visible = sorted.slice(0, MAX_PREVIEW);
+    const remaining = tasks.length - visible.length;
+
+    let html = visible.map(task => `
+        <div class="preview-item${task.done ? " done" : ""}">
+            <span class="preview-dot"></span>
+            <span class="preview-text">${escapeHtml(task.text)}</span>
+        </div>
+    `).join("");
+
+    if (remaining > 0) {
+        html += `<div class="preview-more">+${remaining} tarefa${remaining > 1 ? "s" : ""}</div>`;
+    }
+
+    taskPreview.innerHTML = html;
+}
+
+/* --- Lista completa (view Tarefas, interativa) --- */
+
+function taskItemHtml(task) {
+    const index = tasks.indexOf(task);
+
+    return `
+        <div class="task-item${task.done ? " done" : ""}">
+            <label class="task-checkbox">
+                <input type="checkbox" data-index="${index}" ${task.done ? "checked" : ""}>
+                <span class="checkbox-visual"></span>
+            </label>
+            <span class="task-text">${escapeHtml(task.text)}</span>
+            <button class="task-delete" data-index="${index}" aria-label="Remover tarefa">
+                ${ICONS.trash}
+            </button>
+        </div>
+    `;
+}
+
+function getFilteredTasks() {
+    if (taskFilter === "pending") return tasks.filter(t => !t.done);
+    if (taskFilter === "done") return tasks.filter(t => t.done);
+    return tasks;
+}
+
+const FILTER_MESSAGES = {
+    all: { message: "Nenhuma tarefa ainda.", submessage: "Adicione algo que precisa fazer hoje." },
+    pending: { message: "Nenhuma tarefa pendente.", submessage: "Você está em dia! 🎉" },
+    done: { message: "Nenhuma tarefa concluída ainda.", submessage: "Marque uma tarefa como feita para vê-la aqui." }
+};
+
+function renderFullList() {
+    if (!taskListFull) return;
+
+    const filtered = getFilteredTasks();
+    const { message, submessage } = FILTER_MESSAGES[taskFilter];
+
+    taskListFull.innerHTML = filtered.length === 0
+        ? emptyStateHtml(message, submessage)
+        : filtered.map(taskItemHtml).join("");
+}
+
+/* --- Render geral --- */
+
+function renderTasks() {
+    renderPreview();
+    renderFullList();
 
     const pending = tasks.filter(task => !task.done).length;
     taskCountEl.textContent = pending;
@@ -162,18 +223,28 @@ function deleteTask(index) {
     renderTasks();
 }
 
-// Delegação de eventos (funciona mesmo depois de re-renderizar a lista)
-taskList.addEventListener("click", (event) => {
-    const deleteBtn = event.target.closest(".task-delete");
-    if (deleteBtn) {
-        deleteTask(Number(deleteBtn.dataset.index));
-    }
-});
+if (taskListFull) {
+    taskListFull.addEventListener("click", (event) => {
+        const deleteBtn = event.target.closest(".task-delete");
+        if (deleteBtn) deleteTask(Number(deleteBtn.dataset.index));
+    });
 
-taskList.addEventListener("change", (event) => {
-    if (event.target.matches('input[type="checkbox"]')) {
-        toggleTask(Number(event.target.dataset.index));
-    }
+    taskListFull.addEventListener("change", (event) => {
+        if (event.target.matches('input[type="checkbox"]')) {
+            toggleTask(Number(event.target.dataset.index));
+        }
+    });
+}
+
+/* --- Filtros --- */
+
+filterButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        filterButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        taskFilter = btn.dataset.filter;
+        renderFullList();
+    });
 });
 
 /* --- Modal de nova tarefa --- */
@@ -188,10 +259,10 @@ function closeModal() {
     taskModal.classList.remove("open");
 }
 
-addTaskBtn.addEventListener("click", openModal);
+if (addTaskBtnFull) addTaskBtnFull.addEventListener("click", openModal);
+
 cancelTaskBtn.addEventListener("click", closeModal);
 
-// Fecha clicando fora do card do modal
 taskModal.addEventListener("click", (event) => {
     if (event.target === taskModal) closeModal();
 });
@@ -229,18 +300,22 @@ quickNote.addEventListener("input", () => {
     }, 400);
 });
 
+/* =========================
+   NAVEGAÇÃO DO MENU
+========================= */
+
 const menuButtons = document.querySelectorAll(".menu-item[data-view]");
 const views = document.querySelectorAll(".view");
 
+function switchView(target) {
+    menuButtons.forEach(b => b.classList.toggle("active", b.dataset.view === target));
+    views.forEach(view => view.classList.toggle("active", view.dataset.view === target));
+}
+
 menuButtons.forEach(button => {
-    button.addEventListener("click", () => {
-        const target = button.dataset.view;
+    button.addEventListener("click", () => switchView(button.dataset.view));
+});
 
-        menuButtons.forEach(b => b.classList.remove("active"));
-        button.classList.add("active");
-
-        views.forEach(view => {
-            view.classList.toggle("active", view.dataset.view === target);
-        });
-    });
+document.querySelectorAll("[data-view-link]").forEach(link => {
+    link.addEventListener("click", () => switchView(link.dataset.viewLink));
 });
