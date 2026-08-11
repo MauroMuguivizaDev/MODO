@@ -228,3 +228,19 @@ quickNote.addEventListener("input", () => {
         localStorage.setItem(STORAGE_KEYS.note, quickNote.value);
     }, 400);
 });
+
+const menuButtons = document.querySelectorAll(".menu-item[data-view]");
+const views = document.querySelectorAll(".view");
+
+menuButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        const target = button.dataset.view;
+
+        menuButtons.forEach(b => b.classList.remove("active"));
+        button.classList.add("active");
+
+        views.forEach(view => {
+            view.classList.toggle("active", view.dataset.view === target);
+        });
+    });
+});

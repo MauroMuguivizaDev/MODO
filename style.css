@@ -646,3 +646,17 @@ textarea::placeholder {
     background: rgba(255, 90, 90, 0.12);
     color: #ff6b6b;
 }
+.view {
+    display: none;
+}
+
+.view.active {
+    display: block;
+}
+
+.placeholder-text {
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+    padding: 60px 0;
+}
