@@ -18,7 +18,8 @@ const ICONS = {
 
 const STORAGE_KEYS = {
     tasks: "modo_tasks",
-    note: "modo_note"
+    note: "modo_note",
+    notifications: "modo_notifications"
 };
 
 function loadTasks() {
@@ -99,6 +100,7 @@ const filterButtons = document.querySelectorAll(".filter-btn");
 
 const taskModal = document.getElementById("taskModal");
 const taskInput = document.getElementById("taskInput");
+const taskTime = document.getElementById("taskTime");
 const cancelTaskBtn = document.getElementById("cancelTask");
 const confirmTaskBtn = document.getElementById("confirmTask");
 
@@ -203,11 +205,23 @@ function renderTasks() {
 }
 
 function addTask(text) {
+
     const trimmed = text.trim();
+
     if (!trimmed) return;
 
-    tasks.push({ text: trimmed, done: false });
+    const newTask = {
+        id: Date.now(),
+        text: trimmed,
+        time: taskTime.value || null,
+        done: false,
+        notified: false
+    };
+
+    tasks.push(newTask);
+
     saveTasks();
+
     renderTasks();
 }
 
@@ -251,7 +265,10 @@ filterButtons.forEach(btn => {
 
 function openModal() {
     taskModal.classList.add("open");
+
     taskInput.value = "";
+    taskTime.value = "";
+
     taskInput.focus();
 }
 
@@ -319,3 +336,252 @@ menuButtons.forEach(button => {
 document.querySelectorAll("[data-view-link]").forEach(link => {
     link.addEventListener("click", () => switchView(link.dataset.viewLink));
 });
+
+/* =========================
+   NOTIFICAÇÕES
+========================= */
+
+const notificationStatus =
+    document.getElementById("notificationStatus");
+
+const enableNotifications =
+    document.getElementById("enableNotifications");
+
+const testNotification =
+    document.getElementById("testNotification");
+
+
+let notificationsEnabled =
+    localStorage.getItem(STORAGE_KEYS.notifications) === "true";
+
+
+function updateNotificationUI() {
+
+    if (!notificationStatus || !enableNotifications) {
+        return;
+    }
+
+    if (!("Notification" in window)) {
+
+        notificationStatus.textContent =
+            "Não suportadas neste navegador";
+
+        enableNotifications.textContent =
+            "Indisponível";
+
+        enableNotifications.disabled = true;
+
+        return;
+    }
+
+
+    if (Notification.permission === "granted") {
+
+        notificationStatus.textContent =
+            "Ativadas";
+
+        enableNotifications.textContent =
+            "Ativadas";
+
+        notificationsEnabled = true;
+
+    } else if (Notification.permission === "denied") {
+
+        notificationStatus.textContent =
+            "Bloqueadas no navegador";
+
+        enableNotifications.textContent =
+            "Bloqueadas";
+
+    } else {
+
+        notificationStatus.textContent =
+            "Desativadas";
+
+        enableNotifications.textContent =
+            "Ativar";
+    }
+}
+
+
+async function requestNotificationPermission() {
+
+    if (!("Notification" in window)) {
+
+        alert(
+            "O seu navegador não suporta notificações."
+        );
+
+        return;
+    }
+
+
+    const permission =
+        await Notification.requestPermission();
+
+
+    if (permission === "granted") {
+
+        notificationsEnabled = true;
+
+        localStorage.setItem(
+            STORAGE_KEYS.notifications,
+            "true"
+        );
+
+        new Notification("MODO", {
+            body: "Notificações ativadas com sucesso! 🔔"
+        });
+
+    } else {
+
+        notificationsEnabled = false;
+
+        localStorage.setItem(
+            STORAGE_KEYS.notifications,
+            "false"
+        );
+    }
+
+
+    updateNotificationUI();
+}
+
+
+function sendNotification(title, body) {
+
+    if (!notificationsEnabled) {
+        return;
+    }
+
+    if (!("Notification" in window)) {
+        return;
+    }
+
+    if (Notification.permission !== "granted") {
+        return;
+    }
+
+
+    new Notification(title, {
+        body: body,
+        icon: "favicon.ico"
+    });
+}
+
+
+function testNotificationNow() {
+
+    if (Notification.permission !== "granted") {
+
+        requestNotificationPermission();
+
+        return;
+    }
+
+
+    sendNotification(
+        "MODO 🔔",
+        "As notificações estão funcionando corretamente!"
+    );
+}
+
+
+if (enableNotifications) {
+
+    enableNotifications.addEventListener(
+        "click",
+        requestNotificationPermission
+    );
+
+}
+
+
+if (testNotification) {
+
+    testNotification.addEventListener(
+        "click",
+        testNotificationNow
+    );
+
+}
+
+
+updateNotificationUI();
+
+
+/* =========================
+   VERIFICAR LEMBRETES
+========================= */
+
+function checkTaskReminders() {
+
+    if (!notificationsEnabled) {
+        return;
+    }
+
+
+    if (Notification.permission !== "granted") {
+        return;
+    }
+
+
+    const now = new Date();
+
+    const currentHour =
+        String(now.getHours()).padStart(2, "0");
+
+    const currentMinute =
+        String(now.getMinutes()).padStart(2, "0");
+
+
+    const currentTime =
+        `${currentHour}:${currentMinute}`;
+
+
+    let changed = false;
+
+
+    tasks.forEach(task => {
+
+        if (
+            task.done ||
+            !task.time ||
+            task.notified
+        ) {
+            return;
+        }
+
+
+        if (task.time === currentTime) {
+
+            sendNotification(
+                "MODO — Lembrete 🔔",
+                `Está na hora: ${task.text}`
+            );
+
+
+            task.notified = true;
+
+            changed = true;
+        }
+
+    });
+
+
+    if (changed) {
+        saveTasks();
+    }
+}
+
+
+/*
+   Verifica a cada 30 segundos.
+*/
+
+checkTaskReminders();
+
+setInterval(
+    checkTaskReminders,
+    30000
+);

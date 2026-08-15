@@ -745,3 +745,137 @@ textarea::placeholder {
     font-size: 13px;
     color: var(--muted);
 }
+
+/* =========================
+   CONFIGURAÇÕES
+========================= */
+
+.settings-page {
+    max-width: 760px;
+}
+
+.settings-header {
+    margin-bottom: 25px;
+}
+
+.settings-header h2 {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.settings-header p {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.settings-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+}
+
+.settings-section-title {
+    margin-bottom: 20px;
+}
+
+.settings-section-title h3 {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.settings-section-title p {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 16px 0;
+
+    border-top: 1px solid var(--border);
+}
+
+.setting-row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.setting-row strong {
+    font-size: 14px;
+}
+
+.setting-row span {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.settings-button {
+    border: none;
+    border-radius: 8px;
+
+    padding: 9px 15px;
+
+    background: var(--accent);
+    color: white;
+
+    font-family: inherit;
+    font-size: 12px;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.settings-button:hover {
+    background: var(--accent-hover);
+}
+
+.settings-button.secondary {
+    background: #1d2229;
+    color: var(--text);
+}
+
+.settings-button.secondary:hover {
+    background: #252a32;
+}
+
+/* Horário da tarefa */
+
+.task-time-label {
+    display: block;
+
+    margin-top: 15px;
+    margin-bottom: 7px;
+
+    color: var(--muted);
+
+    font-size: 12px;
+}
+
+#taskTime {
+    width: 100%;
+
+    padding: 11px 12px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: #101318;
+    color: var(--text);
+
+    font-family: inherit;
+    font-size: 14px;
+
+    outline: none;
+}
+
+#taskTime:focus {
+    border-color: var(--accent);
+}

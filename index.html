@@ -277,8 +277,62 @@
             </div>
 
             <div class="view" data-view="configuracoes">
-                <p class="placeholder-text">Em construção.</p>
+
+    <div class="settings-page">
+
+        <div class="settings-header">
+            <h2>Configurações</h2>
+            <p>Personalize como o MODO funciona.</p>
+        </div>
+
+        <div class="settings-section">
+
+            <div class="settings-section-title">
+                <h3>🔔 Notificações</h3>
+                <p>Receba lembretes das suas tarefas.</p>
             </div>
+
+            <div class="setting-row">
+
+                <div class="setting-info">
+                    <strong>Notificações do MODO</strong>
+                    <span id="notificationStatus">
+                        Desativadas
+                    </span>
+                </div>
+
+                <button
+                    type="button"
+                    class="settings-button"
+                    id="enableNotifications">
+                    Ativar
+                </button>
+
+            </div>
+
+            <div class="setting-row">
+
+                <div class="setting-info">
+                    <strong>Testar notificação</strong>
+                    <span>
+                        Verifique se as notificações estão funcionando.
+                    </span>
+                </div>
+
+                <button
+                    type="button"
+                    class="settings-button secondary"
+                    id="testNotification">
+                    Testar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 
         </main>
 
@@ -292,6 +346,11 @@
             <p>O que você precisa fazer?</p>
 
             <input type="text" id="taskInput" placeholder="Ex: Estudar Java" autocomplete="off">
+            <label class="task-time-label" for="taskTime">
+                Horário do lembrete
+            </label>
+
+            <input type="time" id="tasktime">
 
             <div class="modal-actions">
                 <button class="btn-secondary" id="cancelTask">Cancelar</button>
