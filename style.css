@@ -1015,6 +1015,12 @@ textarea::placeholder {
 
     cursor: pointer;
     transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.study-button svg {
+    flex-shrink: 0;
 }
 
 .study-button.primary {

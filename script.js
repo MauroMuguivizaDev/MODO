@@ -663,44 +663,43 @@ setInterval(
 );
 
 /* =========================
-   ESTUDOS
+   ESTUDOS V2.1
+   Cronômetro preciso
 ========================= */
 
 const STUDY_STORAGE_KEY = "modo_study_sessions";
+const STUDY_ACTIVE_KEY = "modo_active_study";
 
-const studyTimerEl =
-    document.getElementById("studyTimer");
+const studyTimerEl = document.getElementById("studyTimer");
+const studySubject = document.getElementById("studySubject");
 
-const studySubject =
-    document.getElementById("studySubject");
+const startStudyBtn = document.getElementById("startStudy");
+const pauseStudyBtn = document.getElementById("pauseStudy");
+const finishStudyBtn = document.getElementById("finishStudy");
 
-const startStudyBtn =
-    document.getElementById("startStudy");
-
-const pauseStudyBtn =
-    document.getElementById("pauseStudy");
-
-const finishStudyBtn =
-    document.getElementById("finishStudy");
-
-const studyTotalEl =
-    document.getElementById("studyTotal");
-
-const studySessionsEl =
-    document.getElementById("studySessions");
-
-
-let studySessions = loadStudySessions();
-
-let studyInterval = null;
-
-let studyRunning = false;
-
-let studyElapsedSeconds = 0;
+const studyTotalEl = document.getElementById("studyTotal");
+const studySessionsEl = document.getElementById("studySessions");
 
 
 /* =========================
-   STORAGE
+   ESTADO
+========================= */
+
+let studySessions = loadStudySessions();
+
+let studyRunning = false;
+
+let studyStartedAt = null;
+
+let studyPausedAt = null;
+
+let studyElapsedBeforePause = 0;
+
+let studyInterval = null;
+
+
+/* =========================
+   LOCAL STORAGE
 ========================= */
 
 function loadStudySessions() {
@@ -708,9 +707,7 @@ function loadStudySessions() {
     try {
 
         const raw =
-            localStorage.getItem(
-                STUDY_STORAGE_KEY
-            );
+            localStorage.getItem(STUDY_STORAGE_KEY);
 
         return raw
             ? JSON.parse(raw)
@@ -733,6 +730,37 @@ function saveStudySessions() {
     localStorage.setItem(
         STUDY_STORAGE_KEY,
         JSON.stringify(studySessions)
+    );
+}
+
+
+function saveActiveStudy() {
+
+    const state = {
+
+        subject: studySubject.value,
+
+        running: studyRunning,
+
+        startedAt: studyStartedAt,
+
+        pausedAt: studyPausedAt,
+
+        elapsedBeforePause:
+            studyElapsedBeforePause
+    };
+
+    localStorage.setItem(
+        STUDY_ACTIVE_KEY,
+        JSON.stringify(state)
+    );
+}
+
+
+function clearActiveStudy() {
+
+    localStorage.removeItem(
+        STUDY_ACTIVE_KEY
     );
 }
 
@@ -761,8 +789,40 @@ function getStudyDateKey() {
 
 
 /* =========================
-   FORMATAR TEMPO
+   TEMPO
 ========================= */
+
+function getElapsedSeconds() {
+
+    /*
+       Sessão pausada
+    */
+
+    if (
+        !studyRunning ||
+        studyStartedAt === null
+    ) {
+
+        return studyElapsedBeforePause;
+    }
+
+
+    /*
+       Sessão rodando.
+
+       O tempo é calculado através
+       do relógio real do sistema.
+    */
+
+    const elapsed =
+        Math.floor(
+            (Date.now() - studyStartedAt) / 1000
+        );
+
+
+    return studyElapsedBeforePause + elapsed;
+}
+
 
 function formatStudyTimer(seconds) {
 
@@ -770,15 +830,22 @@ function formatStudyTimer(seconds) {
         Math.floor(seconds / 3600);
 
     const minutes =
-        Math.floor((seconds % 3600) / 60);
+        Math.floor(
+            (seconds % 3600) / 60
+        );
 
     const secs =
         seconds % 60;
 
+
     return [
+
         String(hours).padStart(2, "0"),
+
         String(minutes).padStart(2, "0"),
+
         String(secs).padStart(2, "0")
+
     ].join(":");
 }
 
@@ -789,7 +856,10 @@ function formatStudyDuration(seconds) {
         Math.floor(seconds / 3600);
 
     const minutes =
-        Math.floor((seconds % 3600) / 60);
+        Math.floor(
+            (seconds % 3600) / 60
+        );
+
 
     if (hours > 0) {
 
@@ -797,39 +867,295 @@ function formatStudyDuration(seconds) {
 
     }
 
+
     return `${minutes}m`;
 }
 
 
 /* =========================
-   RENDER
+   ATUALIZAR RELÓGIO
 ========================= */
 
-function renderStudyTimer() {
+function updateStudyTimer() {
 
     if (!studyTimerEl) return;
 
+
+    const elapsed =
+        getElapsedSeconds();
+
+
     studyTimerEl.textContent =
-        formatStudyTimer(
-            studyElapsedSeconds
+        formatStudyTimer(elapsed);
+}
+
+
+/* =========================
+   INTERVALO VISUAL
+========================= */
+
+function startTimerLoop() {
+
+    clearInterval(
+        studyInterval
+    );
+
+
+    studyInterval =
+        setInterval(
+            updateStudyTimer,
+            250
         );
 }
 
 
+function stopTimerLoop() {
+
+    clearInterval(
+        studyInterval
+    );
+
+    studyInterval = null;
+}
+
+
+/* =========================
+   INICIAR
+========================= */
+
+function startStudy() {
+
+    // Se já está rodando, não faz nada
+    if (studyRunning) {
+        return;
+    }
+
+    /*
+       Só começamos do zero se realmente
+       não houver tempo acumulado.
+    */
+    if (studyElapsedBeforePause === 0) {
+        studyStartedAt = Date.now();
+    } else {
+        /*
+           Estamos retomando uma sessão pausada.
+           Mantemos o tempo já acumulado.
+        */
+        studyStartedAt = Date.now();
+    }
+
+    studyPausedAt = null;
+
+    studyRunning = true;
+
+    startTimerLoop();
+
+    saveActiveStudy();
+
+    updateStudyButtons();
+}
+
+
+/* =========================
+   PAUSAR
+========================= */
+
+function pauseStudy() {
+
+    if (!studyRunning) {
+        return;
+    }
+
+
+    /*
+       Guarda exatamente quanto
+       tempo já passou.
+    */
+
+    studyElapsedBeforePause =
+        getElapsedSeconds();
+
+
+    studyPausedAt = Date.now();
+
+    studyStartedAt = null;
+
+    studyRunning = false;
+
+
+    stopTimerLoop();
+
+    saveActiveStudy();
+
+    updateStudyButtons();
+
+    updateStudyTimer();
+}
+
+
+/* =========================
+   FINALIZAR
+========================= */
+
+function finishStudy() {
+
+    const duration =
+        getElapsedSeconds();
+
+
+    /*
+       Não guardar sessões
+       de 0 segundos.
+    */
+
+    if (duration <= 0) {
+        return;
+    }
+
+
+    stopTimerLoop();
+
+
+    const session = {
+
+        id: Date.now(),
+
+        date:
+            getStudyDateKey(),
+
+        subject:
+            studySubject.value,
+
+        duration:
+            duration,
+
+        createdAt:
+            new Date().toISOString()
+    };
+
+
+    studySessions.push(
+        session
+    );
+
+
+    saveStudySessions();
+
+
+    /*
+       Resetar sessão atual.
+    */
+
+    studyRunning = false;
+
+    studyStartedAt = null;
+
+    studyPausedAt = null;
+
+    studyElapsedBeforePause = 0;
+
+
+    clearActiveStudy();
+
+
+    updateStudyTimer();
+
+    updateStudyButtons();
+
+    renderStudySessions();
+}
+
+
+/* =========================
+   BOTÕES
+========================= */
+
+function updateStudyButtons() {
+
+    if (!startStudyBtn) return;
+
+
+    /*
+       Rodando
+    */
+
+    if (studyRunning) {
+
+        startStudyBtn.disabled = true;
+
+        pauseStudyBtn.disabled = false;
+
+        finishStudyBtn.disabled = false;
+
+        return;
+    }
+
+
+    /*
+       Pausado ou parado
+    */
+
+    startStudyBtn.disabled = false;
+
+    pauseStudyBtn.disabled = true;
+
+    finishStudyBtn.disabled =
+        getElapsedSeconds() <= 0;
+}
+
+
+if (startStudyBtn) {
+
+    startStudyBtn.addEventListener(
+        "click",
+        startStudy
+    );
+}
+
+
+if (pauseStudyBtn) {
+
+    pauseStudyBtn.addEventListener(
+        "click",
+        pauseStudy
+    );
+}
+
+
+if (finishStudyBtn) {
+
+    finishStudyBtn.addEventListener(
+        "click",
+        finishStudy
+    );
+}
+
+
+/* =========================
+   HISTÓRICO
+========================= */
+
 function renderStudySessions() {
 
-    if (!studySessionsEl) return;
+    if (!studySessionsEl) {
+        return;
+    }
+
 
     const today =
         getStudyDateKey();
 
+
     const todaySessions =
         studySessions.filter(
-            session => session.date === today
+            session =>
+                session.date === today
         );
 
 
-    if (todaySessions.length === 0) {
+    if (
+        todaySessions.length === 0
+    ) {
 
         studySessionsEl.innerHTML = `
             <div class="study-empty">
@@ -859,10 +1185,12 @@ function renderStudySessions() {
 
 
     studySessionsEl.innerHTML =
+
         todaySessions
             .slice()
             .reverse()
             .map(session => `
+
                 <div class="study-session">
 
                     <span class="study-session-name">
@@ -870,164 +1198,102 @@ function renderStudySessions() {
                     </span>
 
                     <span class="study-session-time">
-                        ${formatStudyDuration(session.duration)}
+                        ${formatStudyDuration(
+                            session.duration
+                        )}
                     </span>
 
                 </div>
+
             `)
             .join("");
 }
 
 
 /* =========================
-   INICIAR
+   RECUPERAR SESSÃO
 ========================= */
 
-function startStudy() {
+function restoreActiveStudy() {
 
-    if (studyRunning) {
-        return;
+    try {
+
+        const raw =
+            localStorage.getItem(
+                STUDY_ACTIVE_KEY
+            );
+
+
+        if (!raw) {
+            return;
+        }
+
+
+        const state =
+            JSON.parse(raw);
+
+
+        if (state.subject) {
+
+            studySubject.value =
+                state.subject;
+        }
+
+
+        studyStartedAt =
+            state.startedAt || null;
+
+
+        studyPausedAt =
+            state.pausedAt || null;
+
+
+        studyElapsedBeforePause =
+            state.elapsedBeforePause || 0;
+
+
+        studyRunning =
+            state.running === true;
+
+
+        /*
+           Se estava rodando,
+           reconstruímos o cronômetro
+           usando Date.now().
+        */
+
+        if (studyRunning) {
+
+            startTimerLoop();
+
+        }
+
+
+        updateStudyTimer();
+
+        updateStudyButtons();
+
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao recuperar sessão:",
+            error
+        );
+
+        clearActiveStudy();
     }
-
-
-    studyRunning = true;
-
-
-    studyInterval =
-        setInterval(() => {
-
-            studyElapsedSeconds++;
-
-            renderStudyTimer();
-
-        }, 1000);
-
-
-    startStudyBtn.disabled = true;
-
-    pauseStudyBtn.disabled = false;
-
 }
 
 
 /* =========================
-   PAUSAR
+   INICIALIZAÇÃO
 ========================= */
-
-function pauseStudy() {
-
-    if (!studyRunning) {
-        return;
-    }
-
-
-    clearInterval(
-        studyInterval
-    );
-
-    studyInterval = null;
-
-    studyRunning = false;
-
-    startStudyBtn.disabled = false;
-
-}
-
-
-/* =========================
-   FINALIZAR
-========================= */
-
-function finishStudy() {
-
-    if (studyElapsedSeconds <= 0) {
-        return;
-    }
-
-
-    clearInterval(
-        studyInterval
-    );
-
-    studyInterval = null;
-
-    studyRunning = false;
-
-
-    const session = {
-
-        id: Date.now(),
-
-        date: getStudyDateKey(),
-
-        subject:
-            studySubject.value,
-
-        duration:
-            studyElapsedSeconds
-
-    };
-
-
-    studySessions.push(session);
-
-    saveStudySessions();
-
-
-    studyElapsedSeconds = 0;
-
-    renderStudyTimer();
-
-    renderStudySessions();
-
-
-    startStudyBtn.disabled = false;
-
-}
-
-
-/* =========================
-   BOTÕES
-========================= */
-
-if (startStudyBtn) {
-
-    startStudyBtn.addEventListener(
-        "click",
-        startStudy
-    );
-
-}
-
-
-if (pauseStudyBtn) {
-
-    pauseStudyBtn.addEventListener(
-        "click",
-        pauseStudy
-    );
-
-}
-
-
-if (finishStudyBtn) {
-
-    finishStudyBtn.addEventListener(
-        "click",
-        finishStudy
-    );
-
-}
-
-
-/* =========================
-   ESTADO INICIAL
-========================= */
-
-if (pauseStudyBtn) {
-    pauseStudyBtn.disabled = true;
-}
-
-renderStudyTimer();
 
 renderStudySessions();
+
+updateStudyTimer();
+
+restoreActiveStudy();
+
+updateStudyButtons();
