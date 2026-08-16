@@ -879,3 +879,24 @@ textarea::placeholder {
 #taskTime:focus {
     border-color: var(--accent);
 }
+
+/* =========================
+   TAREFA COM HORÁRIO
+========================= */
+
+.task-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    flex: 1;
+}
+
+.task-time {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.task-item.done .task-time {
+    opacity: 0.5;
+}

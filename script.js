@@ -155,18 +155,50 @@ function renderPreview() {
 /* --- Lista completa (view Tarefas, interativa) --- */
 
 function taskItemHtml(task) {
+
     const index = tasks.indexOf(task);
 
     return `
         <div class="task-item${task.done ? " done" : ""}">
+
             <label class="task-checkbox">
-                <input type="checkbox" data-index="${index}" ${task.done ? "checked" : ""}>
+
+                <input
+                    type="checkbox"
+                    data-index="${index}"
+                    ${task.done ? "checked" : ""}
+                >
+
                 <span class="checkbox-visual"></span>
+
             </label>
-            <span class="task-text">${escapeHtml(task.text)}</span>
-            <button class="task-delete" data-index="${index}" aria-label="Remover tarefa">
+
+
+            <div class="task-content">
+
+                <span class="task-text">
+                    ${escapeHtml(task.text)}
+                </span>
+
+                ${
+                    task.time
+                        ? `<span class="task-time">
+                            ⏰ ${task.time}
+                           </span>`
+                        : ""
+                }
+
+            </div>
+
+
+            <button
+                class="task-delete"
+                data-index="${index}"
+                aria-label="Remover tarefa"
+            >
                 ${ICONS.trash}
             </button>
+
         </div>
     `;
 }
@@ -213,9 +245,9 @@ function addTask(text) {
     const newTask = {
         id: Date.now(),
         text: trimmed,
-        time: taskTime.value || null,
+        time: taskTime ? (taskTime.value || null) : null,
         done: false,
-        notified: false
+        lastNotifiedDate: null
     };
 
     tasks.push(newTask);
@@ -267,7 +299,10 @@ function openModal() {
     taskModal.classList.add("open");
 
     taskInput.value = "";
-    taskTime.value = "";
+
+    if(taskTime) {
+        taskTime.value = "";
+    }
 
     taskInput.focus();
 }
@@ -514,41 +549,67 @@ updateNotificationUI();
    VERIFICAR LEMBRETES
 ========================= */
 
+/* =========================
+   LEMBRETES DE TAREFAS
+========================= */
+
+function getTodayKey() {
+    const today = new Date();
+
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
+
 function checkTaskReminders() {
 
     if (!notificationsEnabled) {
         return;
     }
 
+    if (!("Notification" in window)) {
+        return;
+    }
 
     if (Notification.permission !== "granted") {
         return;
     }
 
-
     const now = new Date();
 
-    const currentHour =
-        String(now.getHours()).padStart(2, "0");
+    const currentHour = String(
+        now.getHours()
+    ).padStart(2, "0");
 
-    const currentMinute =
-        String(now.getMinutes()).padStart(2, "0");
-
+    const currentMinute = String(
+        now.getMinutes()
+    ).padStart(2, "0");
 
     const currentTime =
         `${currentHour}:${currentMinute}`;
 
+    const todayKey = getTodayKey();
 
     let changed = false;
 
 
     tasks.forEach(task => {
 
-        if (
-            task.done ||
-            !task.time ||
-            task.notified
-        ) {
+        // Não existe horário
+        if (!task.time) {
+            return;
+        }
+
+        // Tarefa já concluída
+        if (task.done) {
+            return;
+        }
+
+        // Já foi notificada hoje
+        if (task.lastNotifiedDate === todayKey) {
             return;
         }
 
@@ -560,8 +621,7 @@ function checkTaskReminders() {
                 `Está na hora: ${task.text}`
             );
 
-
-            task.notified = true;
+            task.lastNotifiedDate = todayKey;
 
             changed = true;
         }
@@ -571,8 +631,24 @@ function checkTaskReminders() {
 
     if (changed) {
         saveTasks();
+        renderTasks();
     }
 }
+
+
+/*
+   Verificação inicial
+*/
+checkTaskReminders();
+
+
+/*
+   Verificar a cada 30 segundos
+*/
+setInterval(
+    checkTaskReminders,
+    30000
+);
 
 
 /*
