@@ -265,8 +265,136 @@
             </div>
 
             <div class="view" data-view="estudos">
-                <p class="placeholder-text">Em construção — cronômetro de estudos chegando.</p>
+
+    <div class="study-page">
+
+        <div class="study-header">
+            <h2>Estudos</h2>
+            <p>Concentre-se no que importa.</p>
+        </div>
+
+        <div class="study-grid">
+
+            <!-- CRONÔMETRO -->
+
+            <div class="study-panel study-timer-panel">
+
+                <div class="study-panel-header">
+                    <div>
+                        <h3>Sessão de estudo</h3>
+                        <p>Registre o tempo que você estudou.</p>
+                    </div>
+                </div>
+
+                <div class="timer">
+
+                    <div id="studyTimer">
+                        00:00:00
+                    </div>
+
+                </div>
+
+                <div class="study-subject">
+
+                    <label for="studySubject">
+                        Matéria
+                    </label>
+
+                    <select id="studySubject">
+
+                        <option value="Java">
+                            Java
+                        </option>
+
+                        <option value="Python">
+                            Python
+                        </option>
+
+                        <option value="Banco de Dados">
+                            Banco de Dados
+                        </option>
+
+                        <option value="Eletrônica Digital">
+                            Eletrônica Digital
+                        </option>
+
+                        <option value="Kotlin">
+                            Kotlin
+                        </option>
+
+                        <option value="Outro">
+                            Outro
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="study-controls">
+
+                    <button
+                        class="study-button primary"
+                        id="startStudy">
+                        ▶ Iniciar
+                    </button>
+
+                    <button
+                        class="study-button secondary"
+                        id="pauseStudy">
+                        ⏸ Pausar
+                    </button>
+
+                    <button
+                        class="study-button danger"
+                        id="finishStudy">
+                        ⏹ Finalizar
+                    </button>
+
+                </div>
+
             </div>
+
+
+            <!-- RESUMO -->
+
+            <div class="study-panel">
+
+                <div class="study-panel-header">
+
+                    <div>
+                        <h3>Hoje</h3>
+                        <p>Seu tempo de estudo.</p>
+                    </div>
+
+                </div>
+
+                <div class="study-total">
+
+                    <span>Total estudado</span>
+
+                    <strong id="studyTotal">
+                        0h 00m
+                    </strong>
+
+                </div>
+
+                <div
+                    class="study-sessions"
+                    id="studySessions">
+
+                    <div class="study-empty">
+                        Nenhuma sessão registrada hoje.
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 
             <div class="view" data-view="financas">
                 <p class="placeholder-text">Em construção — controle de saldo chegando.</p>

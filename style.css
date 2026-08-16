@@ -900,3 +900,213 @@ textarea::placeholder {
 .task-item.done .task-time {
     opacity: 0.5;
 }
+
+/* =========================
+   ESTUDOS
+========================= */
+
+.study-page {
+    max-width: 1000px;
+}
+
+.study-header {
+    margin-bottom: 25px;
+}
+
+.study-header h2 {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.study-header p {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.study-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 20px;
+}
+
+.study-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+}
+
+.study-panel-header {
+    margin-bottom: 25px;
+}
+
+.study-panel-header h3 {
+    font-size: 17px;
+    margin-bottom: 5px;
+}
+
+.study-panel-header p {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.study-timer-panel {
+    text-align: center;
+}
+
+.timer {
+    margin: 25px 0;
+}
+
+#studyTimer {
+    font-size: 52px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+}
+
+.study-subject {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.study-subject label {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 7px;
+}
+
+#studySubject {
+    width: 100%;
+    padding: 11px 12px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: #101318;
+    color: var(--text);
+
+    font-family: inherit;
+    font-size: 14px;
+
+    outline: none;
+}
+
+#studySubject:focus {
+    border-color: var(--accent);
+}
+
+.study-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.study-button {
+    border: none;
+    border-radius: 8px;
+
+    padding: 10px 15px;
+
+    font-family: inherit;
+    font-size: 12px;
+
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.study-button.primary {
+    background: var(--accent);
+    color: white;
+}
+
+.study-button.primary:hover {
+    background: var(--accent-hover);
+}
+
+.study-button.secondary {
+    background: #1d2229;
+    color: var(--text);
+}
+
+.study-button.secondary:hover {
+    background: #252a32;
+}
+
+.study-button.danger {
+    background: #2a1c20;
+    color: #ff9da9;
+}
+
+.study-button.danger:hover {
+    background: #382126;
+}
+
+.study-total {
+    background: #101318;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    padding: 18px;
+    margin-bottom: 20px;
+}
+
+.study-total span {
+    display: block;
+
+    color: var(--muted);
+    font-size: 12px;
+
+    margin-bottom: 6px;
+}
+
+.study-total strong {
+    font-size: 28px;
+}
+
+.study-sessions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.study-session {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 12px;
+
+    background: #101318;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.study-session-name {
+    font-size: 13px;
+}
+
+.study-session-time {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.study-empty {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 25px 10px;
+}
+
+@media (max-width: 800px) {
+
+    .study-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #studyTimer {
+        font-size: 40px;
+    }
+}

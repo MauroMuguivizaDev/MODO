@@ -661,3 +661,373 @@ setInterval(
     checkTaskReminders,
     30000
 );
+
+/* =========================
+   ESTUDOS
+========================= */
+
+const STUDY_STORAGE_KEY = "modo_study_sessions";
+
+const studyTimerEl =
+    document.getElementById("studyTimer");
+
+const studySubject =
+    document.getElementById("studySubject");
+
+const startStudyBtn =
+    document.getElementById("startStudy");
+
+const pauseStudyBtn =
+    document.getElementById("pauseStudy");
+
+const finishStudyBtn =
+    document.getElementById("finishStudy");
+
+const studyTotalEl =
+    document.getElementById("studyTotal");
+
+const studySessionsEl =
+    document.getElementById("studySessions");
+
+
+let studySessions = loadStudySessions();
+
+let studyInterval = null;
+
+let studyRunning = false;
+
+let studyElapsedSeconds = 0;
+
+
+/* =========================
+   STORAGE
+========================= */
+
+function loadStudySessions() {
+
+    try {
+
+        const raw =
+            localStorage.getItem(
+                STUDY_STORAGE_KEY
+            );
+
+        return raw
+            ? JSON.parse(raw)
+            : [];
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao carregar sessões:",
+            error
+        );
+
+        return [];
+    }
+}
+
+
+function saveStudySessions() {
+
+    localStorage.setItem(
+        STUDY_STORAGE_KEY,
+        JSON.stringify(studySessions)
+    );
+}
+
+
+/* =========================
+   DATA
+========================= */
+
+function getStudyDateKey() {
+
+    const today = new Date();
+
+    const year =
+        today.getFullYear();
+
+    const month =
+        String(today.getMonth() + 1)
+            .padStart(2, "0");
+
+    const day =
+        String(today.getDate())
+            .padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
+
+/* =========================
+   FORMATAR TEMPO
+========================= */
+
+function formatStudyTimer(seconds) {
+
+    const hours =
+        Math.floor(seconds / 3600);
+
+    const minutes =
+        Math.floor((seconds % 3600) / 60);
+
+    const secs =
+        seconds % 60;
+
+    return [
+        String(hours).padStart(2, "0"),
+        String(minutes).padStart(2, "0"),
+        String(secs).padStart(2, "0")
+    ].join(":");
+}
+
+
+function formatStudyDuration(seconds) {
+
+    const hours =
+        Math.floor(seconds / 3600);
+
+    const minutes =
+        Math.floor((seconds % 3600) / 60);
+
+    if (hours > 0) {
+
+        return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+
+    }
+
+    return `${minutes}m`;
+}
+
+
+/* =========================
+   RENDER
+========================= */
+
+function renderStudyTimer() {
+
+    if (!studyTimerEl) return;
+
+    studyTimerEl.textContent =
+        formatStudyTimer(
+            studyElapsedSeconds
+        );
+}
+
+
+function renderStudySessions() {
+
+    if (!studySessionsEl) return;
+
+    const today =
+        getStudyDateKey();
+
+    const todaySessions =
+        studySessions.filter(
+            session => session.date === today
+        );
+
+
+    if (todaySessions.length === 0) {
+
+        studySessionsEl.innerHTML = `
+            <div class="study-empty">
+                Nenhuma sessão registrada hoje.
+            </div>
+        `;
+
+        studyTotalEl.textContent =
+            "0h 00m";
+
+        return;
+    }
+
+
+    const totalSeconds =
+        todaySessions.reduce(
+            (total, session) =>
+                total + session.duration,
+            0
+        );
+
+
+    studyTotalEl.textContent =
+        formatStudyDuration(
+            totalSeconds
+        );
+
+
+    studySessionsEl.innerHTML =
+        todaySessions
+            .slice()
+            .reverse()
+            .map(session => `
+                <div class="study-session">
+
+                    <span class="study-session-name">
+                        ${escapeHtml(session.subject)}
+                    </span>
+
+                    <span class="study-session-time">
+                        ${formatStudyDuration(session.duration)}
+                    </span>
+
+                </div>
+            `)
+            .join("");
+}
+
+
+/* =========================
+   INICIAR
+========================= */
+
+function startStudy() {
+
+    if (studyRunning) {
+        return;
+    }
+
+
+    studyRunning = true;
+
+
+    studyInterval =
+        setInterval(() => {
+
+            studyElapsedSeconds++;
+
+            renderStudyTimer();
+
+        }, 1000);
+
+
+    startStudyBtn.disabled = true;
+
+    pauseStudyBtn.disabled = false;
+
+}
+
+
+/* =========================
+   PAUSAR
+========================= */
+
+function pauseStudy() {
+
+    if (!studyRunning) {
+        return;
+    }
+
+
+    clearInterval(
+        studyInterval
+    );
+
+    studyInterval = null;
+
+    studyRunning = false;
+
+    startStudyBtn.disabled = false;
+
+}
+
+
+/* =========================
+   FINALIZAR
+========================= */
+
+function finishStudy() {
+
+    if (studyElapsedSeconds <= 0) {
+        return;
+    }
+
+
+    clearInterval(
+        studyInterval
+    );
+
+    studyInterval = null;
+
+    studyRunning = false;
+
+
+    const session = {
+
+        id: Date.now(),
+
+        date: getStudyDateKey(),
+
+        subject:
+            studySubject.value,
+
+        duration:
+            studyElapsedSeconds
+
+    };
+
+
+    studySessions.push(session);
+
+    saveStudySessions();
+
+
+    studyElapsedSeconds = 0;
+
+    renderStudyTimer();
+
+    renderStudySessions();
+
+
+    startStudyBtn.disabled = false;
+
+}
+
+
+/* =========================
+   BOTÕES
+========================= */
+
+if (startStudyBtn) {
+
+    startStudyBtn.addEventListener(
+        "click",
+        startStudy
+    );
+
+}
+
+
+if (pauseStudyBtn) {
+
+    pauseStudyBtn.addEventListener(
+        "click",
+        pauseStudy
+    );
+
+}
+
+
+if (finishStudyBtn) {
+
+    finishStudyBtn.addEventListener(
+        "click",
+        finishStudy
+    );
+
+}
+
+
+/* =========================
+   ESTADO INICIAL
+========================= */
+
+if (pauseStudyBtn) {
+    pauseStudyBtn.disabled = true;
+}
+
+renderStudyTimer();
+
+renderStudySessions();
